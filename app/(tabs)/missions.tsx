@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: MainColor,
     borderRadius: 12,
-    paddingHorizontal: 2,
+    paddingHorizontal: 12,
     paddingVertical: 12,
   },
 });

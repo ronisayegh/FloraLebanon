@@ -28,7 +28,6 @@ import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 're
 export default function ProfileScreen() {
   const [showModal, setShowModal] = useState(false);
   const [showBadgesModal, setShowBadgesModal] = useState(false);
-  const [showOrganizationModal, setShowOrganizationModal] = useState(false);
   const [leaveOrganizationTarget, setLeaveOrganizationTarget] = useState<OrganizationMemberSummary | null>(null);
   const [isRefreshing, setRefreshing] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -56,7 +55,6 @@ export default function ProfileScreen() {
 
   const toggleModal = () => setShowModal(prev => !prev);
   const toggleBadgesModal = () => setShowBadgesModal(prev => !prev);
-  const toggleOrganizationModal = () => setShowOrganizationModal(prev => !prev);
 
   const handleLogout = async () => {
     toggleModal();
@@ -283,11 +281,13 @@ export default function ProfileScreen() {
               <View style={[GlobalStyle.row, GlobalStyle.spaceBetween, GlobalStyle.alignCenter]}>
                 <ThemedTxt text="My Organizations" fontWeight="700" fontSize={16} color={MainColor} />
                 {isOrgLoading ? <ThemedTxt text="Syncing..." variant="Secondary" fontSize={11} /> : null}
-                <TouchableOpacity onPress={toggleOrganizationModal} style={styles.badgesInfoBtn}>
-                  <Ionicons name="information-circle-outline" size={Normalize(20)} color={MainColor} />
-                </TouchableOpacity>
               </View>
-              <ThemedTxt text="Organizations you joined or were invited to." variant="Secondary" fontSize={12} style={GlobalStyle.tMar5} />
+              <ThemedTxt
+                text="Organizations let clubs, schools, NGOs, and field teams collect observations together. When your submission is verified, your points can help both your personal profile and your organization."
+                variant="Secondary"
+                fontSize={12}
+                style={GlobalStyle.tMar5}
+              />
               {invitations.length > 0 && (
                 <View style={GlobalStyle.tMar12}>
                   <ThemedTxt text="Pending invitations" fontWeight="600" fontSize={13} color={MainColor} />
@@ -371,6 +371,26 @@ export default function ProfileScreen() {
                   ))
                 )}
               </View>
+              <View style={GlobalStyle.tMar16}>
+                <ThemedView variant="Secondary" style={styles.organizationInfoBox}>
+                  <ThemedTxt text="Join an organization" fontWeight="600" rem={0.875} />
+                  <ThemedTxt
+                    text="An organization manager can invite you by email. Invitations will appear here, and you can accept or reject them."
+                    variant="Secondary"
+                    rem={0.75}
+                    style={GlobalStyle.tMar4}
+                  />
+                </ThemedView>
+                <ThemedView variant="Secondary" style={[styles.organizationInfoBox, GlobalStyle.tMar8]}>
+                  <ThemedTxt text="Manage members" fontWeight="600" rem={0.875} />
+                  <ThemedTxt
+                    text="Managers can invite people, remove members, and promote another member to manager."
+                    variant="Secondary"
+                    rem={0.75}
+                    style={GlobalStyle.tMar4}
+                  />
+                </ThemedView>
+              </View>
             </Card>
 
             <Card>
@@ -442,47 +462,6 @@ export default function ProfileScreen() {
       />
       <ModalWithX isVisible={showBadgesModal} closeModal={toggleBadgesModal} position="middle" style={styles.badgesModal} innerStyle={styles.badgesModalInner}>
         <ProfileBadgeInfoModalContent onClose={toggleBadgesModal} />
-      </ModalWithX>
-      <ModalWithX
-        isVisible={showOrganizationModal}
-        closeModal={toggleOrganizationModal}
-        position="middle"
-        style={styles.badgesModal}
-        innerStyle={styles.badgesModalInner}
-      >
-        <View style={styles.organizationModalContent}>
-          <ThemedTxt text="How Organizations Work" color={MainColor} fontWeight="700" rem={1.25} center />
-          <ThemedTxt
-            text="Organizations let clubs, schools, NGOs, and field teams collect observations together. When your submission is verified, your points can help both your personal profile and your organization."
-            variant="Secondary"
-            rem={0.875}
-            center
-            style={GlobalStyle.tMar12}
-          />
-
-          <View style={GlobalStyle.tMar16}>
-            <ThemedView variant="Secondary" style={styles.organizationInfoBox}>
-              <ThemedTxt text="Join an organization" fontWeight="600" rem={0.875} />
-              <ThemedTxt
-                text="An organization manager can invite you by email. Invitations will appear here, and you can accept or reject them."
-                variant="Secondary"
-                rem={0.75}
-                style={GlobalStyle.tMar4}
-              />
-            </ThemedView>
-
-            <ThemedView variant="Secondary" style={[styles.organizationInfoBox, GlobalStyle.tMar8]}>
-              <ThemedTxt text="Manage members" fontWeight="600" rem={0.875} />
-              <ThemedTxt
-                text="Managers can invite people, remove members, and promote another member to manager."
-                variant="Secondary"
-                rem={0.75}
-                style={GlobalStyle.tMar4}
-              />
-            </ThemedView>
-          </View>
-
-        </View>
       </ModalWithX>
       {dialogNode}
     </ThemedView>
@@ -558,10 +537,6 @@ const styles = StyleSheet.create({
   },
   badgesModalInner: {
     borderRadius: 18,
-  },
-  organizationModalContent: {
-    paddingHorizontal: 18,
-    paddingVertical: 22,
   },
   organizationInfoBox: {
     padding: 12,

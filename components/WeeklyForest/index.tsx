@@ -4,10 +4,15 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Ellipse, G, Path, Rect } from 'react-native-svg';
 
 const MAX_WEEKLY_TREES = 12;
+const TREE_WIDTH = 50;
+const TREE_SPACING = 20;
 
 export const WeeklyForest: React.FC<{ treeCount: number }> = props => {
   const { treeCount } = props;
-  const visibleTreeCount = Math.min(treeCount, MAX_WEEKLY_TREES);
+  // One starter tree, plus one tree per verified submission this week.
+  const visibleTreeCount = Math.min(Math.max(0, treeCount) + 1, MAX_WEEKLY_TREES);
+  // Center the row of trees (each tree is 50 wide, spaced 20 apart) in the 320-wide viewBox.
+  const firstTreeX = 160 - ((visibleTreeCount - 1) * TREE_SPACING + TREE_WIDTH) / 2;
   const trunkHeightIncreases = React.useMemo(() => Array.from({ length: visibleTreeCount }, () => Math.random() * 80), [visibleTreeCount]);
 
   return (
@@ -16,11 +21,10 @@ export const WeeklyForest: React.FC<{ treeCount: number }> = props => {
         <Ellipse cx="160" cy="165" rx="120" ry="12" fill="#b8aa8a" />
         <Rect x="40" y="165" width="240" height="8" fill="#a19170" rx="2" />
         {Array.from({ length: visibleTreeCount }).map((_, index) => {
-          const x = 26 + index * 20;
+          const x = firstTreeX + index * TREE_SPACING;
           const trunkStretch = trunkHeightIncreases[index] ?? 0;
           return <TreeSvg key={index} x={x} trunkStretch={trunkStretch} />;
         })}
-        {visibleTreeCount === 0 ? <StarterTrunkSvg /> : null}
       </Svg>
       <View style={styles.forestCaption}>
         <ThemedTxt
@@ -32,17 +36,6 @@ export const WeeklyForest: React.FC<{ treeCount: number }> = props => {
         />
       </View>
     </ThemedView>
-  );
-};
-
-const StarterTrunkSvg = () => {
-  return (
-    <G transform="translate(145 110)">
-      <Path d="M15 55 V18" stroke="#6b5344" strokeWidth={5} strokeLinecap="round" fill="none" />
-      <Path d="M15 28 Q7 23 3 17" stroke="#6b5344" strokeWidth={2} strokeLinecap="round" fill="none" opacity={0.8} />
-      <Path d="M15 34 Q24 27 29 20" stroke="#6b5344" strokeWidth={2} strokeLinecap="round" fill="none" opacity={0.8} />
-      <Ellipse cx="15" cy="58" rx="18" ry="4" fill="#8c7b5d" opacity={0.45} />
-    </G>
   );
 };
 
