@@ -29,6 +29,8 @@ type RatioOption = [number, number] | undefined;
 const RATIO_OPTIONS: RatioOption[] = [undefined, [1, 1], [4, 3], [16, 9]];
 const CONTROL_ICON_SIZE = 28;
 const CAPTURE_ICON_SIZE = 60;
+// Sits just above the footer row (82px capture button + 20px padding + gap).
+const PHONE_CAMERA_BTN_OFFSET = 112;
 const ZOOM_SENSITIVITY = 0.35;
 const SQUARE_CAPTURE_ZOOM_CROP_COMPENSATION = 0.5;
 
@@ -74,6 +76,8 @@ const getEffectiveTargetRatio = (width: number, height: number, ratio: [number, 
 
 const clampZoom = (value: number) => Math.min(1.0, Math.max(0.0, value));
 const ZOOM_CHANGE_THRESHOLD = 0.01;
+// Max rate at which pinch zoom is forwarded to the native camera (~10 updates/s).
+const ZOOM_APPLY_INTERVAL_MS = 100;
 // Intermediate crop quality for capture pipeline. The submission pipeline re-encodes to 0.85 JPEG afterwards.
 const CAPTURE_CROP_JPEG_QUALITY = 0.92;
 type CameraFlashMode = 'off' | 'on';
@@ -110,9 +114,35 @@ const CameraPreview = React.memo(
     onPreviewLayout,
     onZoomChange,
   }: CameraPreviewProps) => {
+    // `zoom` is what the native camera receives; `zoomRef` tracks the live pinch value.
+    // Pinch events arrive ~60/s. Forwarding each one made the native camera queue
+    // zoom (and physical lens-switch) requests faster than it could apply them, so
+    // zoom lag grew with every use. Native updates are throttled instead, and the
+    // final value is always applied when the pinch ends.
     const [zoom, setZoom] = useState(0);
     const pinchStartZoomRef = useRef(0);
     const zoomRef = useRef(0);
+    const appliedZoomRef = useRef(0);
+    const lastZoomApplyAtRef = useRef(0);
+    const zoomApplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const clearZoomApplyTimer = useCallback(() => {
+      if (zoomApplyTimerRef.current) {
+        clearTimeout(zoomApplyTimerRef.current);
+        zoomApplyTimerRef.current = null;
+      }
+    }, []);
+
+    const applyZoom = useCallback(() => {
+      clearZoomApplyTimer();
+      lastZoomApplyAtRef.current = Date.now();
+      const nextZoom = zoomRef.current;
+      if (Math.abs(appliedZoomRef.current - nextZoom) < ZOOM_CHANGE_THRESHOLD) return;
+      appliedZoomRef.current = nextZoom;
+      setZoom(nextZoom);
+    }, [clearZoomApplyTimer]);
+
+    React.useEffect(() => clearZoomApplyTimer, [clearZoomApplyTimer]);
 
     const startZoomGesture = useCallback(() => {
       if (!enableZoom || controlsDisabled) return;
@@ -123,20 +153,21 @@ const CameraPreview = React.memo(
       (scale: number) => {
         if (!enableZoom || controlsDisabled) return;
         const nextZoom = clampZoom(pinchStartZoomRef.current + (scale - 1) * ZOOM_SENSITIVITY);
+        if (Math.abs(zoomRef.current - nextZoom) < ZOOM_CHANGE_THRESHOLD) return;
+        zoomRef.current = nextZoom;
+        onZoomChange(nextZoom);
 
-        setZoom(current => {
-          if (Math.abs(current - nextZoom) < ZOOM_CHANGE_THRESHOLD) return current;
-          zoomRef.current = nextZoom;
-          onZoomChange(nextZoom);
-          return nextZoom;
-        });
+        const sinceLastApply = Date.now() - lastZoomApplyAtRef.current;
+        if (sinceLastApply >= ZOOM_APPLY_INTERVAL_MS) applyZoom();
+        else if (!zoomApplyTimerRef.current) zoomApplyTimerRef.current = setTimeout(applyZoom, ZOOM_APPLY_INTERVAL_MS - sinceLastApply);
       },
-      [controlsDisabled, enableZoom, onZoomChange],
+      [applyZoom, controlsDisabled, enableZoom, onZoomChange],
     );
 
     const endZoomGesture = useCallback(() => {
       pinchStartZoomRef.current = zoomRef.current;
-    }, []);
+      applyZoom();
+    }, [applyZoom]);
 
     const pinchGesture = React.useMemo(
       () =>
@@ -396,34 +427,66 @@ export const CameraRoll: React.FC<CameraRollProps> = props => {
       return;
     }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       allowsEditing: usesNativeLibraryCrop && hasRatio,
       aspect: usesNativeLibraryCrop ? activeRatio : undefined,
       quality: 1,
     });
 
-    if (!result.canceled) {
-      const file = toFileType(result.assets[0]);
+    handlePickedImage(result);
+  };
 
-      if (!hasRatio || !activeRatio) {
-        if (usesNativeLibraryCrop) {
-          void completeCapture(file);
-          return;
-        }
+  // Shared by the photo library and the phone's own camera app: either hand the
+  // image over directly (native crop) or open the built-in cropper at the active ratio.
+  const handlePickedImage = (result: ImagePicker.ImagePickerResult) => {
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    const file = toFileType(asset);
+
+    if (usesNativeLibraryCrop) {
+      void completeCapture(file);
+      return;
+    }
+
+    setCropSource({
+      image: file,
+      width: asset.width ?? previewSize.width,
+      height: asset.height ?? previewSize.height,
+      ratio: activeRatio,
+    });
+  };
+
+  // Opens the phone's built-in camera app. Users get its tap-to-focus, macro mode,
+  // zoom and full resolution, which the embedded camera view cannot match on many
+  // devices. The photo returns here and goes through the same crop flow as a library pick.
+  const openPhoneCamera = async () => {
+    let permissionResponse = await ImagePicker.getCameraPermissionsAsync();
+    if (!permissionResponse.granted && permissionResponse.canAskAgain) {
+      permissionResponse = await ImagePicker.requestCameraPermissionsAsync();
+    }
+
+    if (!permissionResponse.granted) {
+      if (permissionResponse.canAskAgain === false) {
+        Alert.alert('Camera permission needed', 'To use your phone camera, enable camera access in the app settings.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => void Linking.openSettings() },
+        ]);
       }
+      return;
+    }
 
-      if (usesNativeLibraryCrop) {
-        void completeCapture(file);
-        return;
-      }
-
-      setCropSource({
-        image: file,
-        width: result.assets[0].width ?? previewSize.width,
-        height: result.assets[0].height ?? previewSize.height,
-        ratio: activeRatio,
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'images',
+        allowsEditing: usesNativeLibraryCrop && hasRatio,
+        aspect: usesNativeLibraryCrop ? activeRatio : undefined,
+        quality: 1,
+        cameraType: facing === 'front' ? ImagePicker.CameraType.front : ImagePicker.CameraType.back,
       });
+      handlePickedImage(result);
+    } catch (error) {
+      Alert.alert('Camera unavailable', "Couldn't open your phone camera. Please use the in-app camera or pick a photo from your library.");
     }
   };
 
@@ -557,6 +620,14 @@ export const CameraRoll: React.FC<CameraRollProps> = props => {
           <View style={[styles.maskBottom, { height: overlayMaskStyle?.bottom ?? 0 }]} />
         </View>
       )}
+      {!imageUri ? (
+        <View style={[styles.phoneCameraCont, { bottom: insets.bottom + PHONE_CAMERA_BTN_OFFSET }]} pointerEvents="box-none">
+          <TouchableOpacity style={styles.phoneCameraBtn} onPress={openPhoneCamera} disabled={controlsDisabled}>
+            <MaterialIcons name="photo-camera" size={20} color="white" />
+            <ThemedTxt text="Use Phone Camera" color="white" fontSize={14} fontWeight="700" style={styles.phoneCameraTxt} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
       <View style={[styles.btnCont, styles.footerCont, { bottom: insets.bottom }]}>
         {skipUseConfirmation || !imageUri ? (
           <>
@@ -650,6 +721,25 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     paddingHorizontal: 20,
     paddingVertical: 18,
+  },
+  phoneCameraCont: {
+    position: 'absolute',
+    width: '100%',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  phoneCameraBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000a0',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#FFFFFF66',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  phoneCameraTxt: {
+    marginLeft: 8,
   },
   permissionContainer: {
     flex: 1,
