@@ -1,11 +1,15 @@
 import { IS_DEV, PHONE_FRAME_PREVIEW_ENABLE } from '@/constants/Config';
 import React, { useMemo } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+
+// On web the UI scales with window width (see ResolutionHelper), so a desktop
+// browser renders everything ~3x too large. Always frame web at phone size.
+const IS_WEB = Platform.OS === 'web';
 
 export const PHONE_FRAME_PREVIEW = {
-  enabled: IS_DEV && PHONE_FRAME_PREVIEW_ENABLE,
-  width: 300 as number | null,
-  height: 800 as number | null,
+  enabled: IS_WEB || (IS_DEV && PHONE_FRAME_PREVIEW_ENABLE),
+  width: (IS_WEB ? 412 : 300) as number | null,
+  height: (IS_WEB ? 880 : 800) as number | null,
   backgroundColor: '#222222',
 };
 
@@ -18,7 +22,7 @@ export function usePhoneFramePreview() {
   const windowSize = useWindowDimensions();
 
   const frameStyle = useMemo(() => {
-    if (!IS_DEV || !PHONE_FRAME_PREVIEW.enabled) return null;
+    if (!PHONE_FRAME_PREVIEW.enabled) return null;
     if (PHONE_FRAME_PREVIEW.width == null && PHONE_FRAME_PREVIEW.height == null) return null;
 
     return {

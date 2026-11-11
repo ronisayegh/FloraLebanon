@@ -8,7 +8,10 @@ import { CreateSubmission, apiBaseUrl, getStoredSessionSnapshot } from './index'
 
 const QUEUE_HEALTH_TIMEOUT_MS = 4000;
 const RETRY_BACKOFF_MS = [30_000, 2 * 60_000, 5 * 60_000, 15 * 60_000, 60 * 60_000];
-const QueueDir = new Directory(Paths.document, 'queuedSubmissions');
+// Created lazily: constructing a Directory at import time throws on web,
+// where expo-file-system's File/Directory API is not implemented.
+let queueDir: Directory | null = null;
+const getQueueDir = () => (queueDir ??= new Directory(Paths.document, 'queuedSubmissions'));
 
 export type QueueReasonCode = 'NO_NETWORK' | 'NO_USER' | 'SERVER_UNAVAILABLE' | 'SERVER_ERROR' | 'VALIDATION_ERROR' | 'PHOTO_LOST' | 'UNKNOWN';
 
@@ -153,14 +156,15 @@ const getVisibleQueueForCurrentOwner = async (): Promise<QueuedSubmission[]> => 
 };
 
 const ensureQueueFolder = async () => {
-  if (!QueueDir.exists) QueueDir.create({ intermediates: true, idempotent: true });
+  const dir = getQueueDir();
+  if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
 };
 
 const buildQueuedImagePath = (queueId: string, index: number, image: FileType) => {
   const extensionFromType = image.type?.split('/')[1]?.replace(/[^a-zA-Z0-9]/g, '');
   const extensionFromUri = image.uri.split('.').pop()?.split('?')[0];
   const extension = extensionFromType || extensionFromUri || 'jpg';
-  return new File(QueueDir, `${queueId}-${index}.${extension}`).uri;
+  return new File(getQueueDir(), `${queueId}-${index}.${extension}`).uri;
 };
 
 const saveImageIntoQueue = async (sourceUri: string, destination: string) => {

@@ -1,17 +1,27 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import Logging from '../Logging';
 import { GetRandomUUID } from '../Static';
 import { CurrentSessionUUIDKey, TokenKey } from './keys';
+
+// expo-secure-store has no web implementation, so on web every save silently
+// failed and the auth token was lost (users got logged out on the next
+// authenticated request). Web is only used as a dev preview, so fall back to
+// localStorage there. Native platforms keep using the OS keychain/keystore.
+const webStorage = Platform.OS === 'web' && typeof window !== 'undefined' ? window.localStorage : null;
+
 export const SecureStoreManager = {
   async setItem(key: string, value: string) {
     try {
-      await SecureStore.setItemAsync(key, value);
+      if (webStorage) webStorage.setItem(key, value);
+      else await SecureStore.setItemAsync(key, value);
     } catch (e) {
       Logging.Logger.error('Error saving data', e);
     }
   },
   async getItem(key: string) {
     try {
+      if (webStorage) return webStorage.getItem(key);
       const value = await SecureStore.getItemAsync(key);
       return value;
     } catch (e) {
@@ -21,7 +31,8 @@ export const SecureStoreManager = {
   },
   async deleteItem(key: string) {
     try {
-      await SecureStore.deleteItemAsync(key);
+      if (webStorage) webStorage.removeItem(key);
+      else await SecureStore.deleteItemAsync(key);
     } catch (e) {
       Logging.Logger.error('Error deleting data', e);
     }

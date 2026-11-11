@@ -26,6 +26,7 @@ import { PrepareSubmissionImages, type FileType } from '@/constants/Helper';
 import Logging from '@/constants/Logging';
 import { AuthSessionKey, SecureStoreManager, StoreManager } from '@/constants/Stores';
 import axios, { AxiosError, AxiosRequestConfig, RawAxiosRequestHeaders } from 'axios';
+import { Platform } from 'react-native';
 
 const API_PREFIX = '/v1';
 const REQUEST_TIMEOUT = 10000;
@@ -117,7 +118,10 @@ const normalizeFloweringPlantsResponse = (response: ApiResponse<FloweringPlantsR
       }
     : response;
 
-export const apiBaseUrl = `${normalizeBaseUrl(API_BASE_URL)}${API_PREFIX}`;
+// In the web dev preview, route API calls through the dev server's /api-proxy
+// (see metro.config.js) because the API blocks cross-origin browser requests.
+const USE_WEB_DEV_PROXY = Platform.OS === 'web' && __DEV__;
+export const apiBaseUrl = USE_WEB_DEV_PROXY ? `/api-proxy${API_PREFIX}` : `${normalizeBaseUrl(API_BASE_URL)}${API_PREFIX}`;
 export const getSessionStatusFromUser = (user: AuthUser): AuthSession['status'] => (user.role === 'GUEST' ? 'guest' : 'authenticated');
 export const createLocalGuestSession = (): AuthSession => ({ status: 'local_guest', user: null, lastSyncedAt: null });
 export const createSessionSnapshot = (user: AuthUser): AuthSession => {
