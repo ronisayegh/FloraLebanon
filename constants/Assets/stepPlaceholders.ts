@@ -1,0 +1,16 @@
+export const STEP_PLACEHOLDER_IMAGES = [
+  require('../../assets/images/steps/1.png'),
+  require('../../assets/images/steps/2.png'),
+  require('../../assets/images/steps/3.png'),
+  require('../../assets/images/steps/4.png'),
+  require('../../assets/images/steps/5.png'),
+  require('../../assets/images/steps/6.png'),
+  require('../../assets/images/steps/7.png'),
+  require('../../assets/images/steps/8.png'),
+  require('../../assets/images/steps/9.png'),
+  require('../../assets/images/steps/10.png'),
+  require('../../assets/images/steps/11.png'),
+  require('../../assets/images/steps/12.png'),
+  require('../../assets/images/steps/13.png'),
+  require('../../assets/images/steps/14.png'),
+] as const;

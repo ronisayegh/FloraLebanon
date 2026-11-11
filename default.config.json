@@ -1,0 +1,24 @@
+{
+  "app": {
+    "baseName": "flora_lebanon_app",
+    "build": 4,
+    "version": "1.0.3",
+    "platform": "android",
+    "dev": false,
+    "log_enabled": false,
+    "phone_frame_preview_enable": false,
+    "MainColor": "#800020",
+    "submissionImages": {
+      "convertToJpeg": true
+    },
+    "tabs": {
+      "dev_tab": false,
+      "showcase_tab": false
+    },
+    "apis": {
+      "master": "https://api.flora-lebanon.com",
+      "dev": "http://192.168.1.245:4000",
+      "hotspot": "http://"
+    }
+  }
+}

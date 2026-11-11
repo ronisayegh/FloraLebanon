@@ -1,0 +1,14 @@
+import { APP_BASE_NAME } from '../Config';
+export const TokenKey = `current-${APP_BASE_NAME}-token`;
+export const CurrentSessionUUIDKey = `current-${APP_BASE_NAME}-session-uuid`;
+export const ThemeKey = `current-${APP_BASE_NAME}-theme`;
+export const AuthSessionKey = `current-${APP_BASE_NAME}-auth-session`;
+export const SubmissionQueueKey = `current-${APP_BASE_NAME}-submission-queue`;
+export const DevCameraPersistKey = `current-${APP_BASE_NAME}-dev-camera-persist`;
+export const CameraFlashKey = `current-${APP_BASE_NAME}-camera-flash`;
+export const ProfileSummaryKey = (userId: string) => `current-${APP_BASE_NAME}-profile-summary-${userId}`;
+export const UsersListKey = `current-${APP_BASE_NAME}-users-list`;
+export const ChatListKey = `current-${APP_BASE_NAME}-chat-list`;
+export const ChatKey = (id: string) => `current-${APP_BASE_NAME}-chat-${id}`;
+export const PostListkey = `current-${APP_BASE_NAME}-post-list`;
+export const ProjectListKey = `current-${APP_BASE_NAME}-project-list`;

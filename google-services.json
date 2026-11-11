@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "104334657938",
+    "project_id": "flora-lebanon",
+    "storage_bucket": "flora-lebanon.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:104334657938:android:1f78de796a68744dc4194b",
+        "android_client_info": {
+          "package_name": "com.floralebanon.flora_lebanon_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABuVuMBZFmM2f9Zbg-ofRUzewoxInnccQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

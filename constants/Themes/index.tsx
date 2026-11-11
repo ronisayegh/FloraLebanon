@@ -1,0 +1,31 @@
+import { ThemeValues } from './theme-values';
+export type ThemeType = {
+  primary: string;
+  secondary: string;
+  success: string;
+  valid: string;
+  warning: string;
+  error: string;
+  info: string;
+  primaryText: string;
+  secondaryText: string;
+  tertiaryText: string;
+  placeholderText: string;
+  disabledText: string;
+  onPrimary: string;
+  onSecondary: string;
+  onDisabled: string;
+  disabledbg: string;
+  containerBg: string;
+  primaryBg: string;
+  secondaryBg: string;
+  shadowColor: string;
+  font: string;
+  isDark?: boolean;
+};
+export type ThemeProps = {
+  light: ThemeType;
+  dark: ThemeType;
+};
+export type ThemeKeys = keyof ThemeProps | 'auto';
+export const Themes: ThemeProps = ThemeValues;

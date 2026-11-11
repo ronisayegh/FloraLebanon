@@ -1,0 +1,55 @@
+const defaultConfig = require('../../default.config.json');
+
+const MainColor = defaultConfig.app.MainColor;
+
+const ThemeValues = {
+  light: {
+    primary: MainColor,
+    secondary: '#999999',
+    success: '#16a34a',
+    valid: '#16a34a',
+    warning: '#f59e0b',
+    error: '#dc2626',
+    info: '#0ea5e9',
+    primaryText: MainColor,
+    secondaryText: '#1e2939',
+    tertiaryText: '#6a7282',
+    placeholderText: '#94a3b8',
+    disabledText: '#cbd5e1',
+    onPrimary: '#fff',
+    onSecondary: '#1e2939',
+    onDisabled: '#94a3b8',
+    disabledbg: '#e2e8f0',
+    containerBg: '#f2f2f2',
+    primaryBg: '#fff',
+    secondaryBg: '#fff',
+    font: 'Montserrat',
+    shadowColor: '#000',
+  },
+  dark: {
+    primary: MainColor,
+    secondary: '#999999',
+    success: '#22c55e',
+    valid: '#22c55e',
+    warning: '#fbbf24',
+    error: '#f87171',
+    info: '#38bdf8',
+    primaryText: MainColor,
+    secondaryText: '#fff',
+    tertiaryText: '#cbd5e1',
+    placeholderText: '#94a3b8',
+    disabledText: '#64748b',
+    onPrimary: '#fff',
+    onSecondary: '#fff',
+    onDisabled: '#cbd5e1',
+    disabledbg: '#475569',
+    containerBg: '#111',
+    primaryBg: '#222',
+    secondaryBg: '#333',
+    shadowColor: '#ccc',
+    font: 'Montserrat',
+    isDark: true,
+  },
+};
+
+module.exports = { MainColor, ThemeValues };
